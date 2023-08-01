@@ -1,0 +1,50 @@
+/**
+ *Submitted for verification at basescan.org on 2023-07-31
+*/
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract web3ForeTeller {
+    uint256 public randomSalt;
+
+
+    // Obtain hash from the previous 255 blocks
+    function _getPreviousBlockHashes() private view returns (bytes32) {
+        bytes32 result = bytes32(0);
+        uint256 currentBlock = block.number - 1;
+
+        for (uint256 i = 0; i < 255; i++) {
+            result = keccak256(abi.encodePacked(result, blockhash(currentBlock)));
+            currentBlock--;
+        }
+        return result;
+    }
+
+
+    // Internal function to generate a random number using salt
+    function _getRandomNumber() private view returns (uint256) {
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _getPreviousBlockHashes())));
+        return randomNumber % 7;
+    }
+
+
+    // Let's generate a random number here (from 0 to 6)
+    function getRandomNumber() public view returns (uint256) {
+        return _getRandomNumber();
+    }
+
+
+    // Some magic (random salt generation using txid hash)
+    function getRandomSaltFromGasBurn() public {
+        uint256 gasPriceSalt = uint256(keccak256(abi.encodePacked(tx.gasprice, block.number)));
+        randomSalt = gasPriceSalt;
+    }
+
+
+    // Create a random number using the randomSalt from Gas Burn function
+    function getRandomNumberWithGas() public view returns (uint256) {
+        uint256 randomNumber = _getRandomNumber() + randomSalt;
+        return randomNumber % 7;
+    }
+}
